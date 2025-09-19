@@ -1,7 +1,3 @@
-// Filename: main.go
-// Description: This program downloads and runs a specific folder from any
-// GitHub repository by using its direct URL.
-
 package main
 
 import (
@@ -12,97 +8,37 @@ import (
 	"path/filepath"
 )
 
-// --- STEP 1: Configure Your Project Details ---
 const (
-	// Paste the full HTTPS URL of your GitHub repository here.
-	// It must end with .git
-	repoURL = "https://github.com/dorky0/ml_with_go_lab_programs.git"
-
-	// The repository's default branch (usually "main" or "master").
+	repoURL       = "https://github.com/dorky0/ml_with_go_lab_programs.git"
 	defaultBranch = "main"
 )
 
-// main is the entry point of the program. It orchestrates the process of
-// downloading and running the specified experiment.
 func main() {
-	// --- STEP 2: Choose Which Experiment to Run ---
-	// Change this value to the name of the folder you want to run, e.g., "exp2".
+	experimentName := "exp1a" // --> change experiment here
 
-	experimentName := "exp1a"        // -----> change experiment here like exp1a, exp2a, exp2b, exp12
-
-	// --- Program Execution Starts Here ---
-
-
-	// Action 1: Download just the specific experiment folder.
-	log.Println(">> Phase 1: Downloading remote folder...")
-	if err := downloadExperiment(experimentName); err != nil {
-		log.Fatalf("❌ Failed to download experiment: %v", err)
-	}
-	log.Println("✅ Download complete.")
-
-	// Action 2: Run the Go program inside the downloaded folder.
-	log.Println(">> Phase 2: Running the experiment's code...\n \nOutput : ")
-	if err := runExperiment(experimentName); err != nil {
-		log.Fatalf("❌ Failed to run experiment: %v", err)
-	}
-}
-
-// downloadExperiment uses "sparse checkout" to download a specific subdirectory.
-func downloadExperiment(expName string) error {
-	// For a clean run, remove any old directory with the same name.
-	os.RemoveAll(expName)
-
-	// Create a new, empty directory to hold the experiment files.
-	if err := os.Mkdir(expName, 0755); err != nil {
-		return fmt.Errorf("could not create directory '%s': %w", expName, err)
+	runCmd := func(dir string, name string, args ...string) {
+		cmd := exec.Command(name, args...)
+		cmd.Dir, cmd.Stdout, cmd.Stderr = dir, os.Stdout, os.Stderr
+		if err := cmd.Run(); err != nil {
+			log.Fatalf("❌ Command '%s' failed: %v", name, err)
+		}
 	}
 
-	// --- Sparse Checkout Process ---
-
-	// 1. `git init`: Create an empty Git repository.
-	if err := runCommand(expName, "git", "init"); err != nil {
-		return err
-	}
-	// 2. `git remote add`: Link it to the remote repository URL.
-	if err := runCommand(expName, "git", "remote", "add", "origin", repoURL); err != nil {
-		return err
-	}
-	// 3. `git config`: Enable the sparse checkout feature.
-	if err := runCommand(expName, "git", "config", "core.sparseCheckout", "true"); err != nil {
-		return err
+	os.RemoveAll(experimentName)
+	if err := os.Mkdir(experimentName, 0755); err != nil {
+		log.Fatalf("❌ Failed to create directory: %v", err)
 	}
 
-	// 4. Tell Git which folder we want by writing its path into a special file.
-	sparseCheckoutFile := filepath.Join(expName, ".git", "info", "sparse-checkout")
-	log.Printf("   - Specifying folder to download: %s", expName)
-	if err := os.WriteFile(sparseCheckoutFile, []byte(expName+"/"), 0666); err != nil {
-		return fmt.Errorf("could not configure sparse checkout: %w", err)
+	runCmd(experimentName, "git", "init")
+	runCmd(experimentName, "git", "remote", "add", "origin", repoURL)
+	runCmd(experimentName, "git", "config", "core.sparseCheckout", "true")
+
+	sparseFile := filepath.Join(experimentName, ".git", "info", "sparse-checkout")
+	if err := os.WriteFile(sparseFile, []byte(experimentName+"/"), 0666); err != nil {
+		log.Fatalf("❌ Failed to write sparse-checkout file: %v", err)
 	}
-
-	// 5. `git pull`: Pull from the repository, downloading only our specified folder.
-	log.Printf("   - Fetching from remote...")
-	return runCommand(expName, "git", "pull", "--depth=1", "origin", defaultBranch)
-}
-
-// runExperiment executes the Go program located inside the downloaded folder.
-func runExperiment(expName string) error {
-	// The path to the code will be nested, e.g., `./exp1/exp1/exp1.go`.
-	runDirectory := filepath.Join(expName, expName)
-	fileToRun := expName + ".go"
-
+	runCmd(experimentName, "git", "pull", "--depth=1", "origin", defaultBranch)
 	
-
-	err := runCommand(runDirectory, "go", "run", fileToRun)
-
-
-	return err
-}
-
-// runCommand is a helper function that executes a system command and shows its output.
-func runCommand(workingDir, command string, args ...string) error {
-	cmd := exec.Command(command, args...)
-	cmd.Dir = workingDir   // Set the command's working directory.
-	cmd.Stdout = os.Stdout // Pipe output to our terminal.
-	cmd.Stderr = os.Stderr // Pipe errors to our terminal.
-	return cmd.Run()
+	log.Println("\n\n---  (this below only actual output)   ---\n")
+	runCmd(filepath.Join(experimentName, experimentName), "go", "run", experimentName+".go")
 }
