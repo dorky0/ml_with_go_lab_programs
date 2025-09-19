@@ -28,11 +28,10 @@ func main() {
 	// --- STEP 2: Choose Which Experiment to Run ---
 	// Change this value to the name of the folder you want to run, e.g., "exp2".
 
-	experimentName := "exp1"        // -----> change experiment here like exp1a, exp2a, exp2b, exp12
+	experimentName := "exp1a"        // -----> change experiment here like exp1a, exp2a, exp2b, exp12
 
 	// --- Program Execution Starts Here ---
-	log.Printf("🚀 Starting runner for experiment: %s", experimentName)
-	log.Printf(">> Target repository: %s", repoURL)
+
 
 	// Action 1: Download just the specific experiment folder.
 	log.Println(">> Phase 1: Downloading remote folder...")
@@ -42,17 +41,15 @@ func main() {
 	log.Println("✅ Download complete.")
 
 	// Action 2: Run the Go program inside the downloaded folder.
-	log.Println(">> Phase 2: Running the experiment's code...")
+	log.Println(">> Phase 2: Running the experiment's code...\n \nOutput : ")
 	if err := runExperiment(experimentName); err != nil {
 		log.Fatalf("❌ Failed to run experiment: %v", err)
 	}
-	log.Println("🎉 Experiment finished successfully!")
 }
 
 // downloadExperiment uses "sparse checkout" to download a specific subdirectory.
 func downloadExperiment(expName string) error {
 	// For a clean run, remove any old directory with the same name.
-	log.Printf("   - Cleaning up workspace for '%s'...", expName)
 	os.RemoveAll(expName)
 
 	// Create a new, empty directory to hold the experiment files.
@@ -61,7 +58,6 @@ func downloadExperiment(expName string) error {
 	}
 
 	// --- Sparse Checkout Process ---
-	log.Println("   - Initializing a temporary Git repository...")
 
 	// 1. `git init`: Create an empty Git repository.
 	if err := runCommand(expName, "git", "init"); err != nil {
@@ -94,12 +90,11 @@ func runExperiment(expName string) error {
 	runDirectory := filepath.Join(expName, expName)
 	fileToRun := expName + ".go"
 
-	log.Printf("   - Executing `go run %s`...", fileToRun)
-	log.Println("--- [ Experiment Output Begins ] ---")
+	
 
 	err := runCommand(runDirectory, "go", "run", fileToRun)
 
-	log.Println("--- [ Experiment Output Ends ] ---")
+
 	return err
 }
 
