@@ -16,7 +16,7 @@ import (
 const (
 	// Paste the full HTTPS URL of your GitHub repository here.
 	// It must end with .git
-	repoURL = "https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git"
+	repoURL = "https://github.com/dorky0/ml_with_go_lab_programs.git"
 
 	// The repository's default branch (usually "main" or "master").
 	defaultBranch = "main"
